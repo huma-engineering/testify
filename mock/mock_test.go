@@ -151,7 +151,7 @@ func Test_Mock_Chained_On(t *testing.T) {
 	var mockedService = new(TestExampleImplementation)
 
 	// determine our current line number so we can assert the expected calls callerInfo properly
-	_, _, line, _ := runtime.Caller(0)
+	_, filename, line, _ := runtime.Caller(0)
 	mockedService.
 		On("TheExampleMethod", 1, 2, 3).
 		Return(0).
@@ -164,14 +164,14 @@ func Test_Mock_Chained_On(t *testing.T) {
 			Method:          "TheExampleMethod",
 			Arguments:       []interface{}{1, 2, 3},
 			ReturnArguments: []interface{}{0},
-			callerInfo:      []string{fmt.Sprintf("mock_test.go:%d", line+2)},
+			callerInfo:      []string{fmt.Sprintf("%s:%d", filename, line+2)},
 		},
 		{
 			Parent:          &mockedService.Mock,
 			Method:          "TheExampleMethod3",
 			Arguments:       []interface{}{AnythingOfType("*mock.ExampleType")},
 			ReturnArguments: []interface{}{nil},
-			callerInfo:      []string{fmt.Sprintf("mock_test.go:%d", line+4)},
+			callerInfo:      []string{fmt.Sprintf("%s:%d", filename, line+4)},
 		},
 	}
 	assert.Equal(t, expectedCalls, mockedService.ExpectedCalls)
@@ -230,6 +230,32 @@ func Test_Mock_On_WithIntArgMatcher(t *testing.T) {
 	})
 	assert.NotPanics(t, func() {
 		mockedService.TheExampleMethod(1, 2, 3)
+	})
+}
+
+func Test_Mock_On_WithArgMatcherThatPanics(t *testing.T) {
+	var mockedService TestExampleImplementation
+
+	mockedService.On("TheExampleMethod2", MatchedBy(func(_ interface{}) bool {
+		panic("try to lock mockedService")
+	})).Return()
+
+	defer func() {
+		assertedExpectations := make(chan struct{})
+		go func() {
+			tt := new(testing.T)
+			mockedService.AssertExpectations(tt)
+			close(assertedExpectations)
+		}()
+		select {
+		case <-assertedExpectations:
+		case <-time.After(time.Second):
+			t.Fatal("AssertExpectations() deadlocked, did the panic leave mockedService locked?")
+		}
+	}()
+
+	assert.Panics(t, func() {
+		mockedService.TheExampleMethod2(false)
 	})
 }
 
@@ -460,6 +486,87 @@ func Test_Mock_On_WithFuncTypeArg(t *testing.T) {
 	assert.NotPanics(t, func() {
 		mockedService.TheExampleMethodFuncType(fn)
 	})
+}
+
+func Test_Mock_Unset(t *testing.T) {
+	// make a test impl object
+	var mockedService = new(TestExampleImplementation)
+
+	call := mockedService.
+		On("TheExampleMethodFuncType", "argA").
+		Return("blah")
+
+	found, foundCall := mockedService.findExpectedCall("TheExampleMethodFuncType", "argA")
+	require.NotEqual(t, -1, found)
+	require.Equal(t, foundCall, call)
+
+	call.Unset()
+
+	found, foundCall = mockedService.findExpectedCall("TheExampleMethodFuncType", "argA")
+	require.Equal(t, -1, found)
+
+	var expectedCall *Call
+	require.Equal(t, expectedCall, foundCall)
+
+	fn := func(string) error { return nil }
+	assert.Panics(t, func() {
+		mockedService.TheExampleMethodFuncType(fn)
+	})
+}
+
+// Since every time you call On it creates a new object
+// the last time you call Unset it will only unset the last call
+func Test_Mock_Chained_UnsetOnlyUnsetsLastCall(t *testing.T) {
+	// make a test impl object
+	var mockedService = new(TestExampleImplementation)
+
+	// determine our current line number so we can assert the expected calls callerInfo properly
+	_, filename, line, _ := runtime.Caller(0)
+	mockedService.
+		On("TheExampleMethod1", 1, 1).
+		Return(0).
+		On("TheExampleMethod2", 2, 2).
+		On("TheExampleMethod3", 3, 3, 3).
+		Return(nil).
+		Unset()
+
+	expectedCalls := []*Call{
+		{
+			Parent:          &mockedService.Mock,
+			Method:          "TheExampleMethod1",
+			Arguments:       []interface{}{1, 1},
+			ReturnArguments: []interface{}{0},
+			callerInfo:      []string{fmt.Sprintf("%s:%d", filename, line+2)},
+		},
+		{
+			Parent:          &mockedService.Mock,
+			Method:          "TheExampleMethod2",
+			Arguments:       []interface{}{2, 2},
+			ReturnArguments: []interface{}{},
+			callerInfo:      []string{fmt.Sprintf("%s:%d", filename, line+4)},
+		},
+	}
+	assert.Equal(t, 2, len(expectedCalls))
+	assert.Equal(t, expectedCalls, mockedService.ExpectedCalls)
+}
+
+func Test_Mock_UnsetIfAlreadyUnsetFails(t *testing.T) {
+	// make a test impl object
+	var mockedService = new(TestExampleImplementation)
+
+	mock1 := mockedService.
+		On("TheExampleMethod1", 1, 1).
+		Return(1)
+
+	assert.Equal(t, 1, len(mockedService.ExpectedCalls))
+	mock1.Unset()
+	assert.Equal(t, 0, len(mockedService.ExpectedCalls))
+
+	assert.Panics(t, func() {
+		mock1.Unset()
+	})
+
+	assert.Equal(t, 0, len(mockedService.ExpectedCalls))
 }
 
 func Test_Mock_Return(t *testing.T) {
@@ -713,6 +820,195 @@ func Test_Mock_Return_Nothing(t *testing.T) {
 	assert.Equal(t, 0, len(call.ReturnArguments))
 }
 
+func Test_Mock_Return_NotBefore_In_Order(t *testing.T) {
+	var mockedService = new(TestExampleImplementation)
+
+	b := mockedService.
+		On("TheExampleMethod", 1, 2, 3).
+		Return(4, nil)
+	c := mockedService.
+		On("TheExampleMethod2", true).
+		Return().
+		NotBefore(b)
+
+	require.Equal(t, []*Call{b, c}, mockedService.ExpectedCalls)
+	require.NotPanics(t, func() {
+		mockedService.TheExampleMethod(1, 2, 3)
+	})
+	require.NotPanics(t, func() {
+		mockedService.TheExampleMethod2(true)
+	})
+}
+
+func Test_Mock_Return_NotBefore_Out_Of_Order(t *testing.T) {
+	var mockedService = new(TestExampleImplementation)
+
+	b := mockedService.
+		On("TheExampleMethod", 1, 2, 3).
+		Return(4, nil).Twice()
+	c := mockedService.
+		On("TheExampleMethod2", true).
+		Return().
+		NotBefore(b)
+
+	require.Equal(t, []*Call{b, c}, mockedService.ExpectedCalls)
+
+	expectedPanicString := `mock: Unexpected Method Call
+-----------------------------
+
+TheExampleMethod2(bool)
+		0: true
+
+Must not be called before:
+
+TheExampleMethod(int,int,int)
+		0: 1
+		1: 2
+		2: 3`
+	require.PanicsWithValue(t, expectedPanicString, func() {
+		mockedService.TheExampleMethod2(true)
+	})
+}
+
+func Test_Mock_Return_NotBefore_Not_Enough_Times(t *testing.T) {
+	var mockedService = new(TestExampleImplementation)
+
+	b := mockedService.
+		On("TheExampleMethod", 1, 2, 3).
+		Return(4, nil).Twice()
+	c := mockedService.
+		On("TheExampleMethod2", true).
+		Return().
+		NotBefore(b)
+
+	require.Equal(t, []*Call{b, c}, mockedService.ExpectedCalls)
+
+	require.NotPanics(t, func() {
+		mockedService.TheExampleMethod(1, 2, 3)
+	})
+	expectedPanicString := `mock: Unexpected Method Call
+-----------------------------
+
+TheExampleMethod2(bool)
+		0: true
+
+Must not be called before another call of:
+
+TheExampleMethod(int,int,int)
+		0: 1
+		1: 2
+		2: 3`
+	require.PanicsWithValue(t, expectedPanicString, func() {
+		mockedService.TheExampleMethod2(true)
+	})
+}
+
+func Test_Mock_Return_NotBefore_Different_Mock_In_Order(t *testing.T) {
+	var (
+		mockedService1 = new(TestExampleImplementation)
+		mockedService2 = new(TestExampleImplementation)
+	)
+
+	b := mockedService1.
+		On("TheExampleMethod", 1, 2, 3).
+		Return(4, nil)
+	c := mockedService2.
+		On("TheExampleMethod2", true).
+		Return().
+		NotBefore(b)
+
+	require.Equal(t, []*Call{c}, mockedService2.ExpectedCalls)
+	require.NotPanics(t, func() {
+		mockedService1.TheExampleMethod(1, 2, 3)
+	})
+	require.NotPanics(t, func() {
+		mockedService2.TheExampleMethod2(true)
+	})
+}
+func Test_Mock_Return_NotBefore_Different_Mock_Out_Of_Order(t *testing.T) {
+	var (
+		mockedService1 = new(TestExampleImplementation)
+		mockedService2 = new(TestExampleImplementation)
+	)
+
+	b := mockedService1.
+		On("TheExampleMethod", 1, 2, 3).
+		Return(4, nil)
+	c := mockedService2.
+		On("TheExampleMethod2", true).
+		Return().
+		NotBefore(b)
+
+	require.Equal(t, []*Call{c}, mockedService2.ExpectedCalls)
+
+	expectedPanicString := `mock: Unexpected Method Call
+-----------------------------
+
+TheExampleMethod2(bool)
+		0: true
+
+Must not be called before method from another mock instance:
+
+TheExampleMethod(int,int,int)
+		0: 1
+		1: 2
+		2: 3`
+	require.PanicsWithValue(t, expectedPanicString, func() {
+		mockedService2.TheExampleMethod2(true)
+	})
+}
+
+func Test_Mock_Return_NotBefore_In_Order_With_Non_Dependant(t *testing.T) {
+	var mockedService = new(TestExampleImplementation)
+
+	a := mockedService.
+		On("TheExampleMethod", 1, 2, 3).
+		Return(4, nil)
+	b := mockedService.
+		On("TheExampleMethod", 4, 5, 6).
+		Return(4, nil)
+	c := mockedService.
+		On("TheExampleMethod2", true).
+		Return().
+		NotBefore(a, b)
+	d := mockedService.
+		On("TheExampleMethod7", []bool{}).Return(nil)
+
+	require.Equal(t, []*Call{a, b, c, d}, mockedService.ExpectedCalls)
+	require.NotPanics(t, func() {
+		mockedService.TheExampleMethod7([]bool{})
+	})
+	require.NotPanics(t, func() {
+		mockedService.TheExampleMethod(1, 2, 3)
+	})
+	require.NotPanics(t, func() {
+		mockedService.TheExampleMethod7([]bool{})
+	})
+	require.NotPanics(t, func() {
+		mockedService.TheExampleMethod(4, 5, 6)
+	})
+	require.NotPanics(t, func() {
+		mockedService.TheExampleMethod7([]bool{})
+	})
+	require.NotPanics(t, func() {
+		mockedService.TheExampleMethod2(true)
+	})
+	require.NotPanics(t, func() {
+		mockedService.TheExampleMethod7([]bool{})
+	})
+}
+
+func Test_Mock_Return_NotBefore_Orphan_Call(t *testing.T) {
+	var mockedService = new(TestExampleImplementation)
+
+	require.PanicsWithValue(t, "not before calls must be created with Mock.On()", func() {
+		mockedService.
+			On("TheExampleMethod2", true).
+			Return().
+			NotBefore(&Call{Method: "Not", Arguments: Arguments{"how", "it's"}, ReturnArguments: Arguments{"done"}})
+	})
+}
+
 func Test_Mock_findExpectedCall(t *testing.T) {
 
 	m := new(Mock)
@@ -915,6 +1211,7 @@ func Test_AssertExpectationsForObjects_Helper(t *testing.T) {
 	var mockedService1 = new(TestExampleImplementation)
 	var mockedService2 = new(TestExampleImplementation)
 	var mockedService3 = new(TestExampleImplementation)
+	var mockedService4 = new(TestExampleImplementation) // No expectations does not cause a panic
 
 	mockedService1.On("Test_AssertExpectationsForObjects_Helper", 1).Return()
 	mockedService2.On("Test_AssertExpectationsForObjects_Helper", 2).Return()
@@ -924,8 +1221,8 @@ func Test_AssertExpectationsForObjects_Helper(t *testing.T) {
 	mockedService2.Called(2)
 	mockedService3.Called(3)
 
-	assert.True(t, AssertExpectationsForObjects(t, &mockedService1.Mock, &mockedService2.Mock, &mockedService3.Mock))
-	assert.True(t, AssertExpectationsForObjects(t, mockedService1, mockedService2, mockedService3))
+	assert.True(t, AssertExpectationsForObjects(t, &mockedService1.Mock, &mockedService2.Mock, &mockedService3.Mock, &mockedService4.Mock))
+	assert.True(t, AssertExpectationsForObjects(t, mockedService1, mockedService2, mockedService3, mockedService4))
 
 }
 
@@ -1482,6 +1779,10 @@ func (s *timer) GetTime(i int) string {
 	return s.Called(i).Get(0).(string)
 }
 
+func (s *timer) GetTimes(times []int) string {
+	return s.Called(times).Get(0).(string)
+}
+
 type tCustomLogger struct {
 	*testing.T
 	logs []string
@@ -1550,6 +1851,23 @@ func TestArgumentMatcherToPrintMismatch(t *testing.T) {
 	m.On("GetTime", MatchedBy(func(i int) bool { return false })).Return("SomeTime").Once()
 
 	res := m.GetTime(1)
+	require.Equal(t, "SomeTime", res)
+	m.AssertExpectations(t)
+}
+
+func TestArgumentMatcherToPrintMismatchWithReferenceType(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			matchingExp := regexp.MustCompile(
+				`\s+mock: Unexpected Method Call\s+-*\s+GetTimes\(\[\]int\)\s+0: \[\]int\{1\}\s+The closest call I have is:\s+GetTimes\(mock.argumentMatcher\)\s+0: mock.argumentMatcher\{.*?\}\s+Diff:.*\(\[\]int=\[1\]\) not matched by func\(\[\]int\) bool`)
+			assert.Regexp(t, matchingExp, r)
+		}
+	}()
+
+	m := new(timer)
+	m.On("GetTimes", MatchedBy(func(_ []int) bool { return false })).Return("SomeTime").Once()
+
+	res := m.GetTimes([]int{1})
 	require.Equal(t, "SomeTime", res)
 	m.AssertExpectations(t)
 }
