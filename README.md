@@ -190,6 +190,31 @@ func TestSomethingWithPlaceholder(t *testing.T) {
 
 
 }
+
+// TestSomethingElse2 is a third example that shows how you can use
+// the Unset method to cleanup handlers and then add new ones.
+func TestSomethingElse2(t *testing.T) {
+
+  // create an instance of our test object
+  testObj := new(MyMockedObject)
+
+  // setup expectations with a placeholder in the argument list
+  mockCall := testObj.On("DoSomething", mock.Anything).Return(true, nil)
+
+  // call the code we are testing
+  targetFuncThatDoesSomethingWithObj(testObj)
+
+  // assert that the expectations were met
+  testObj.AssertExpectations(t)
+
+  // remove the handler now so we can add another one that takes precedence
+  mockCall.Unset()
+
+  // return false now instead of true
+  testObj.On("DoSomething", mock.Anything).Return(false, nil)
+
+  testObj.AssertExpectations(t)
+}
 ```
 
 For more information on how to write mock code, check out the [API documentation for the `mock` package](http://godoc.org/github.com/stretchr/testify/mock).
@@ -211,11 +236,9 @@ import (
     "github.com/stretchr/testify/suite"
 )
 
-// Define the suite, and absorb the built-in basic suite
-// functionality from testify - including a T() method which
-// returns the current testing context
+// Define the suite, which is simply a struct with all
+// fields that tests need.
 type ExampleTestSuite struct {
-    suite.Suite
     VariableThatShouldStartAtFive int
 }
 
@@ -227,8 +250,8 @@ func (suite *ExampleTestSuite) SetupTest() {
 
 // All methods that begin with "Test" are run as tests within a
 // suite.
-func (suite *ExampleTestSuite) TestExample() {
-    assert.Equal(suite.T(), 5, suite.VariableThatShouldStartAtFive)
+func (suite *ExampleTestSuite) TestExample(t *suite.T) {
+    assert.Equal(t, 5, suite.VariableThatShouldStartAtFive)
 }
 
 // In order for 'go test' to run this suite, we need to create
@@ -251,23 +274,22 @@ import (
     "github.com/stretchr/testify/suite"
 )
 
-// Define the suite, and absorb the built-in basic suite
-// functionality from testify - including assertion methods.
+// Define the suite, which is simply a struct with all
+// fields that tests need.
 type ExampleTestSuite struct {
-    suite.Suite
     VariableThatShouldStartAtFive int
 }
 
 // Make sure that VariableThatShouldStartAtFive is set to five
 // before each test
-func (suite *ExampleTestSuite) SetupTest() {
+func (suite *ExampleTestSuite) SetupTest(t *suite.T) {
     suite.VariableThatShouldStartAtFive = 5
 }
 
 // All methods that begin with "Test" are run as tests within a
 // suite.
-func (suite *ExampleTestSuite) TestExample() {
-    suite.Equal(suite.VariableThatShouldStartAtFive, 5)
+func (suite *ExampleTestSuite) TestExample(t *suite.T) {
+    t.Equal(5, suite.VariableThatShouldStartAtFive)
 }
 
 // In order for 'go test' to run this suite, we need to create
@@ -323,7 +345,7 @@ To update Testify to the latest version, use `go get -u github.com/stretchr/test
 Supported go versions
 ==================
 
-We support the three major Go versions, which are 1.13, 1.14 and 1.15 at the moment.
+We currently support the most recent major Go versions from 1.13 onward.
 
 ------
 
