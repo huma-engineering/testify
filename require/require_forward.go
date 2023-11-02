@@ -1,15 +1,16 @@
 /*
-* CODE GENERATED AUTOMATICALLY WITH github.com/stretchr/testify/_codegen
+* CODE GENERATED AUTOMATICALLY WITH github.com/denist-huma/testify/v2/_codegen
 * THIS FILE MUST NOT BE EDITED BY HAND
  */
 
 package require
 
 import (
-	assert "github.com/stretchr/testify/assert"
 	http "net/http"
 	url "net/url"
 	time "time"
+
+	assert "github.com/denist-huma/testify/v2/assert"
 )
 
 // Condition uses a Comparison to assert a complex condition.

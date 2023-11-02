@@ -3,7 +3,7 @@ package http
 import (
 	"net/http"
 
-	"github.com/stretchr/testify/mock"
+	"github.com/denist-huma/testify/v2/mock"
 )
 
 // TestRoundTripper DEPRECATED USE net/http/httptest

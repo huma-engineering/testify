@@ -14,9 +14,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
+	"github.com/denist-huma/testify/v2/assert"
+	"github.com/denist-huma/testify/v2/require"
+	"github.com/denist-huma/testify/v2/suite"
 )
 
 // SuiteRequireTwice is intended to test the usage of suite.Require in two
