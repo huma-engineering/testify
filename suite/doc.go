@@ -33,7 +33,7 @@
 //	// Basic imports
 //	import (
 //	    "testing"
-//	    "github.com/denist-huma/testify/v2/assert"
+//	    "github.com/stretchr/testify/assert"
 //	    "github.com/denist-huma/testify/v2/suite"
 //	)
 //

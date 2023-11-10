@@ -14,8 +14,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/denist-huma/testify/v2/assert"
-	"github.com/denist-huma/testify/v2/require"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/denist-huma/testify/v2/suite"
 )
 
