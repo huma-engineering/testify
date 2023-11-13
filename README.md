@@ -1,16 +1,16 @@
-# Testify Suite fork for the Parallel tests
+# Testify Fork For The Parallel Test Suites
 
-This is a fork of [testify/suite][testify] for the Parallel tests support.
+[![Go Report Card](https://goreportcard.com/badge/github.com/huma-engineering/testify/v2)](https://goreportcard.com/report/github.com/huma-engineering/testify/v2) [![PkgGoDev](https://pkg.go.dev/badge/github.com/huma-engineering/testify/v2)](https://pkg.go.dev/github.com/huma-engineering/testify/v2)
 
-You should use the [testify][testify] if you don't need the parallel tests because this work is not meant to have continuous improvement.
+This is a fork of [testify/suite][testify] for the parallel test suites support.
+
+You should use the [testify][testify] if you don't need the parallel test suites because this work is not meant to have continuous improvement.
 It's as it is now, and I am satisfied with the current module.
 
 ## Thanks
 
 - [testify][testify] contributors for a nice and lightweight test helper tools.
 - Marcus Loo [maroux](https://github.com/maroux) for the contribution [Add support for parallel sub-tests and remove suite.Suite pseudo-interitance #1109](https://github.com/stretchr/testify/pull/1109)
-
-[![Go Report Card](https://goreportcard.com/badge/github.com/huma-engineering/testify/v2)](https://goreportcard.com/report/github.com/huma-engineering/testify/v2) [![PkgGoDev](https://pkg.go.dev/badge/github.com/huma-engineering/testify/v2)](https://pkg.go.dev/github.com/huma-engineering/testify/v2)
 
 Go code (golang) set of packages that provide many tools for testifying that your code will behave as you intend.
 
@@ -68,10 +68,10 @@ For a more complete example, using all of the functionality provided by the suit
 
 For more information on writing suites, check out the [API documentation for the `suite` package](http://godoc.org/github.com/huma-engineering/testify/v2/suite).
 
-### Parallel Tests
+### Parallel Test Suites
 
-This example [TestSuiteParallelSubTests](https://github.com/huma-engineering/testify/v2/blob/master/package_test.go) shows that [the issue with the parallel tests](https://github.com/stretchr/testify/issues/934) is solved.
-You should see that TearDownTest waits until all parallel sub-tests finished.
+This example [TestSuiteParallelSubTests](https://github.com/huma-engineering/testify/v2/blob/master/package_test.go) shows that [the issue with the parallel test suite](https://github.com/stretchr/testify/issues/934) is solved.
+You should see that suite's TearDownTest waits until all suite's parallel sub-tests finished.
 
 ```go
 import (
@@ -172,8 +172,6 @@ To update Testify to the latest version, use `go get -u github.com/huma-engineer
 We currently support the most recent major Go versions from 1.13 onward.
 
 ## Contributing
-
-there is a problem that
 
 Please feel free to submit issues, fork the repository and send pull requests!
 
