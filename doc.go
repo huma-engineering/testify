@@ -7,6 +7,6 @@ package testify
 
 // blank imports help docs.
 import (
-  // suite package
-  _ "github.com/denist-huma/testify/v2/suite"
+	// suite package
+	_ "github.com/huma-engineering/testify/v2/suite"
 )

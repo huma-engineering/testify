@@ -3,7 +3,7 @@ package testify
 import (
 	"testing"
 
-	"github.com/denist-huma/testify/v2/suite"
+	"github.com/huma-engineering/testify/v2/suite"
 )
 
 type Suite struct{}

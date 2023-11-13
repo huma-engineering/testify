@@ -10,7 +10,7 @@ It's as it is now, and I am satisfied with the current module.
 - [testify][testify] contributors for a nice and lightweight test helper tools.
 - Marcus Loo [maroux](https://github.com/maroux) for the contribution [Add support for parallel sub-tests and remove suite.Suite pseudo-interitance #1109](https://github.com/stretchr/testify/pull/1109)
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/denist-huma/testify/v2)](https://goreportcard.com/report/github.com/denist-huma/testify/v2) [![PkgGoDev](https://pkg.go.dev/badge/github.com/denist-huma/testify/v2)](https://pkg.go.dev/github.com/denist-huma/testify/v2)
+[![Go Report Card](https://goreportcard.com/badge/github.com/huma-engineering/testify/v2)](https://goreportcard.com/report/github.com/huma-engineering/testify/v2) [![PkgGoDev](https://pkg.go.dev/badge/github.com/huma-engineering/testify/v2)](https://pkg.go.dev/github.com/huma-engineering/testify/v2)
 
 Go code (golang) set of packages that provide many tools for testifying that your code will behave as you intend.
 
@@ -22,10 +22,10 @@ Get started:
 
 * Install testify with [one line of code](#installation), or [update it with another](#staying-up-to-date)
 * For an introduction to writing test code in Go, see <http://golang.org/doc/code.html#Testing>
-* Check out the API Documentation <http://godoc.org/github.com/denist-huma/testify/v2>
+* Check out the API Documentation <http://godoc.org/github.com/huma-engineering/testify/v2>
 * A little about [Test-Driven Development (TDD)](http://en.wikipedia.org/wiki/Test-driven_development)
 
-## [`suite`](http://godoc.org/github.com/denist-huma/testify/v2/suite "API documentation") package
+## [`suite`](http://godoc.org/github.com/huma-engineering/testify/v2/suite "API documentation") package
 
 The `suite` package provides functionality that you might be used to from more common object-oriented languages.  With it, you can build a testing suite as a struct, build setup/teardown methods and testing methods on your struct, and run them with 'go test' as per normal.
 
@@ -36,7 +36,7 @@ An example suite is shown below:
 import (
     "testing"
     "github.com/stretchr/testify/assert"
-    "github.com/denist-huma/testify/v2/suite"
+    "github.com/huma-engineering/testify/v2/suite"
 )
 
 // Define the suite, which is simply a struct with all
@@ -64,20 +64,20 @@ func TestExampleTestSuite(t *testing.T) {
 }
 ```
 
-For a more complete example, using all of the functionality provided by the suite package, look at our [example testing suite](https://github.com/denist-huma/testify/v2/blob/master/suite/suite_test.go)
+For a more complete example, using all of the functionality provided by the suite package, look at our [example testing suite](https://github.com/huma-engineering/testify/v2/blob/master/suite/suite_test.go)
 
-For more information on writing suites, check out the [API documentation for the `suite` package](http://godoc.org/github.com/denist-huma/testify/v2/suite).
+For more information on writing suites, check out the [API documentation for the `suite` package](http://godoc.org/github.com/huma-engineering/testify/v2/suite).
 
 ### Parallel Tests
 
-This example [TestSuiteParallelSubTests](https://github.com/denist-huma/testify/v2/blob/master/package_test.go) shows that [the issue with the parallel tests](https://github.com/stretchr/testify/issues/934) is solved.
+This example [TestSuiteParallelSubTests](https://github.com/huma-engineering/testify/v2/blob/master/package_test.go) shows that [the issue with the parallel tests](https://github.com/stretchr/testify/issues/934) is solved.
 You should see that TearDownTest waits until all parallel sub-tests finished.
 
 ```go
 import (
   "testing"
 
-  "github.com/denist-huma/testify/v2/suite"
+  "github.com/huma-engineering/testify/v2/suite"
 )
 
 func TestSuiteParallelSubTests(t *testing.T) {
@@ -154,18 +154,18 @@ $ go test -v .
             --- PASS: TestSuiteParallelSubTests/All/TestTwo/sub3 (0.00s)
             --- PASS: TestSuiteParallelSubTests/All/TestTwo/sub2 (0.00s)
 PASS
-ok      github.com/denist-huma/testify/v2       0.005s
+ok      github.com/huma-engineering/testify/v2       0.005s
 ```
 
 ## Installation
 
-To install Testify, use `go get`: `go get github.com/denist-huma/testify/v2`
+To install Testify, use `go get`: `go get github.com/huma-engineering/testify/v2`
 
-This will then make the following packages available to you: `github.com/denist-huma/testify/v2/suite`
+This will then make the following packages available to you: `github.com/huma-engineering/testify/v2/suite`
 
 ## Staying up-to-date
 
-To update Testify to the latest version, use `go get -u github.com/denist-huma/testify/v2`.
+To update Testify to the latest version, use `go get -u github.com/huma-engineering/testify/v2`.
 
 ## Supported go versions
 
